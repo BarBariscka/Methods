@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agents Lab GUI</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 AI Agents — Лабораторные 1–4</h1>
+            <p class="subtitle">GUI для тестирования MCP-сервера и A2A-агентов</p>
+        </header>
+
+        <!-- Статус сервисов -->
+        <section id="services" class="card">
+            <h2>📡 Статус сервисов</h2>
+            <div id="service-list" class="service-grid"></div>
+        </section>
+
+        <!-- MCP-инструменты -->
+        <section id="mcp-section" class="card">
+            <h2>💰 MCP-сервер (Лаба 1)</h2>
+            <div class="tabs">
+                <button class="tab active" data-tab="annuity">Аннуитетный кредит</button>
+                <button class="tab" data-tab="differential">Дифференцированный</button>
+                <button class="tab" data-tab="deposit">Вклад</button>
+                <button class="tab" data-tab="compare">Сравнение</button>
+                <button class="tab" data-tab="investment">Инвестиции</button>
+            </div>
+
+            <!-- Аннуитетный кредит -->
+            <div class="tab-content active" id="tab-annuity">
+                <form id="form-annuity">
+                    <div class="form-row">
+                        <label>Сумма кредита (₽): <input type="number" id="annuity-principal" value="1000000" min="1"></label>
+                        <label>Ставка (%): <input type="number" id="annuity-rate" value="15" step="0.1" min="0.1"></label>
+                        <label>Срок (мес): <input type="number" id="annuity-months" value="60" min="1"></label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Рассчитать</button>
+                </form>
+                <pre id="result-annuity" class="result"></pre>
+            </div>
+
+            <!-- Дифференцированный кредит -->
+            <div class="tab-content" id="tab-differential">
+                <form id="form-differential">
+                    <div class="form-row">
+                        <label>Сумма кредита (₽): <input type="number" id="diff-principal" value="1000000" min="1"></label>
+                        <label>Ставка (%): <input type="number" id="diff-rate" value="15" step="0.1" min="0.1"></label>
+                        <label>Срок (мес): <input type="number" id="diff-months" value="60" min="1"></label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Рассчитать</button>
+                </form>
+                <pre id="result-differential" class="result"></pre>
+            </div>
+
+            <!-- Вклад -->
+            <div class="tab-content" id="tab-deposit">
+                <form id="form-deposit">
+                    <div class="form-row">
+                        <label>Начальная сумма (₽): <input type="number" id="dep-initial" value="500000" min="0"></label>
+                        <label>Ставка (%): <input type="number" id="dep-rate" value="12" step="0.1" min="0"></label>
+                        <label>Срок (мес): <input type="number" id="dep-months" value="24" min="1"></label>
+                        <label>Взнос/мес (₽): <input type="number" id="dep-contrib" value="10000" min="0"></label>
+                    </div>
+                    <label><input type="checkbox" id="dep-beginning" checked> Взнос в начале месяца</label>
+                    <button type="submit" class="btn btn-primary">Рассчитать</button>
+                </form>
+                <pre id="result-deposit" class="result"></pre>
+            </div>
+
+            <!-- Сравнение -->
+            <div class="tab-content" id="tab-compare">
+                <form id="form-compare">
+                    <div class="form-row">
+                        <label>Сумма кредита (₽): <input type="number" id="cmp-principal" value="500000" min="1"></label>
+                        <label>Ставка (%): <input type="number" id="cmp-rate" value="12" step="0.1" min="0.1"></label>
+                        <label>Срок (мес): <input type="number" id="cmp-months" value="36" min="1"></label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Сравнить</button>
+                </form>
+                <pre id="result-compare" class="result"></pre>
+            </div>
+
+            <!-- Инвестиции -->
+            <div class="tab-content" id="tab-investment">
+                <form id="form-investment">
+                    <div class="form-row">
+                        <label>Начальная сумма (₽): <input type="number" id="inv-initial" value="100000" min="0"></label>
+                        <label>Доходность (%): <input type="number" id="inv-rate" value="10" step="0.1" min="0"></label>
+                        <label>Срок (мес): <input type="number" id="inv-months" value="36" min="1"></label>
+                        <label>Взнос/мес (₽): <input type="number" id="inv-contrib" value="5000" min="0"></label>
+                    </div>
+                    <label><input type="checkbox" id="inv-beginning" checked> Взнос в начале месяца</label>
+                    <button type="submit" class="btn btn-primary">Рассчитать</button>
+                </form>
+                <pre id="result-investment" class="result"></pre>
+            </div>
+        </section>
+
+        <!-- A2A-агенты -->
+        <section id="agents-section" class="card">
+            <h2>🤖 A2A-агенты (Лабы 2–4)</h2>
+            <div class="agent-selector">
+                <label>Агент:
+                    <select id="agent-select">
+                        <option value="lab2_adk">ADK-агент (лаб. 2)</option>
+                        <option value="lab3_langchain">LangChain-агент (лаб. 3)</option>
+                        <option value="lab4_smolagents">SmolAgents (лаб. 4)</option>
+                    </select>
+                </label>
+            </div>
+            <form id="form-a2a">
+                <textarea id="a2a-message" placeholder="Введите запрос агенту...&#10;&#10;Пример: Рассчитай аннуитетный кредит на 1 000 000 ₽ под 15% на 5 лет" rows="4"></textarea>
+                <button type="submit" class="btn btn-success">Отправить агенту</button>
+            </form>
+            <div id="a2a-result" class="result"></div>
+        </section>
+
+        <footer>
+            <p>AI Agents Lab GUI v1.0 | MCP + A2A + Docker</p>
+        </footer>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

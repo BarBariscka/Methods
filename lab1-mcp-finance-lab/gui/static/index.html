@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCP Finance — Калькулятор</title>
+<style>
+  :root {
+    --bg: #f4f6fa;
+    --card: #ffffff;
+    --primary: #2563eb;
+    --primary-dark: #1e40af;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --success: #059669;
+    --danger: #dc2626;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: #fff;
+    padding: 24px 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
+  header h1 { font-size: 22px; font-weight: 600; }
+  header p { opacity: .85; font-size: 13px; margin-top: 4px; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .tab {
+    padding: 10px 18px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    transition: all .15s;
+  }
+  .tab:hover { border-color: var(--primary); color: var(--primary); }
+  .tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+  .grid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .card h2 { font-size: 16px; margin-bottom: 16px; }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 5px; color: var(--muted); }
+  .field input[type=number] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .field input:focus { border-color: var(--primary); }
+  .switch-row { display: flex; align-items: center; gap: 10px; }
+  .switch-row input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--primary); }
+  .switch-row span { font-size: 13px; color: var(--muted); }
+
+  button.primary {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  button.primary:hover { background: var(--primary-dark); }
+  button.primary:disabled { background: #93c5fd; cursor: not-allowed; }
+
+  .status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: none;
+  }
+  .status.error { display: block; background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+  .status.loading { display: block; background: #eff6ff; color: var(--primary-dark); border: 1px solid #bfdbfe; }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .stat .label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .stat .value { font-size: 18px; font-weight: 600; }
+  .stat .value.green { color: var(--success); }
+  .stat .value.red { color: var(--danger); }
+
+  .chart-card { margin-bottom: 20px; }
+  .chart-card canvas { width: 100%; height: 260px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: var(--card);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--border); }
+  th { background: #f9fafb; color: var(--muted); font-weight: 600; position: sticky; top: 0; }
+  th:first-child, td:first-child { text-align: left; }
+  tbody tr:hover { background: #f3f4f6; }
+  .table-wrap { max-height: 420px; overflow: auto; border-radius: var(--radius); }
+
+  .recommendation {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  .advantages { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 700px) { .advantages { grid-template-columns: 1fr; } }
+  .advantages h3 { font-size: 14px; margin-bottom: 8px; }
+  .advantages ul { padding-left: 18px; font-size: 13px; color: var(--muted); }
+  .advantages li { margin-bottom: 4px; }
+
+  .empty { color: var(--muted); text-align: center; padding: 60px 0; font-size: 14px; }
+  .hidden { display: none; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>💰 MCP Finance — Калькулятор кредитов, вкладов и инвестиций</h1>
+  <p>Веб-интерфейс поверх MCP-сервера (протокол Model Context Protocol)</p>
+</header>
+
+<div class="container">
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-tab="annuity">Аннуитетный кредит</div>
+    <div class="tab" data-tab="differential">Дифференцированный кредит</div>
+    <div class="tab" data-tab="deposit">Вклад с капитализацией</div>
+    <div class="tab" data-tab="investment">Инвестиции</div>
+    <div class="tab" data-tab="compare">Сравнение кредитов</div>
+  </div>
+
+  <div class="grid">
+    <!-- Форма -->
+    <div class="card">
+      <h2 id="form-title">Параметры расчёта</h2>
+      <div id="form"></div>
+      <button class="primary" id="btn-calc">Рассчитать</button>
+      <div class="status" id="status"></div>
+    </div>
+
+    <!-- Результат -->
+    <div>
+      <div id="result-empty" class="empty">Заполните параметры слева и нажмите «Рассчитать»</div>
+      <div id="result" class="hidden">
+        <div class="summary" id="summary"></div>
+        <div class="recommendation hidden" id="recommendation"></div>
+        <div class="advantages hidden" id="advantages"></div>
+        <div class="card chart-card">
+          <h2 id="chart-title">График</h2>
+          <canvas id="chart"></canvas>
+        </div>
+        <div class="card">
+          <h2 id="table-title">Помесячный график</h2>
+          <div class="table-wrap">
+            <table id="table"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>MCP Finance GUI · lab1-mcp-finance-lab</footer>
+
+<script>
+"use strict";
+
+// ---------- Конфигурация инструментов ----------
+
+const TOOLS = {
+  annuity: {
+    title: "Аннуитетный кредит",
+    tool: "loan_schedule_annuity",
+    fields: [
+      { name: "principal", label: "Сумма кредита, ₽", value: 1000000, min: 0 },
+      { name: "annual_rate_percent", label: "Ставка, % годовых", value: 12, min: 0, step: 0.1 },
+      { name: "months", label: "Срок, месяцев", value: 24, min: 1 },
+    ],
+  },
+  differential: {
+    title: "Дифференцированный кредит",
+    tool: "loan_schedule_differential",
+    fields: [
+      { name: "principal", label: "Сумма кредита, ₽", value: 1000000, min: 0 },
+      { name: "annual_rate_percent", label: "Ставка, % годовых", value: 12, min: 0, step: 0.1 },
+      { name: "months", label: "Срок, месяцев", value: 24, min: 1 },
+    ],
+  },
+  deposit: {
+    title: "Вклад с капитализацией",
+    tool: "deposit_schedule_compound",
+    fields: [
+      { name: "initial_amount", label: "Начальная сумма, ₽", value: 100000, min: 0 },
+      { name: "annual_rate_percent", label: "Ставка, % годовых", value: 8, min: 0, step: 0.1 },
+      { name: "months", label: "Срок, месяцев", value: 12, min: 1 },
+      { name: "monthly_contribution", label: "Ежемесячный взнос, ₽", value: 5000, min: 0 },
+      { name: "contribution_at_beginning", label: "Взнос в начале месяца", type: "checkbox", value: false },
+    ],
+  },
+  investment: {
+    title: "Калькулятор инвестиций",
+    tool: "investment_calculator",
+    fields: [
+      { name: "initial_amount", label: "Начальная сумма, ₽", value: 200000, min: 0 },
+      { name: "annual_rate_percent", label: "Доходность, % годовых", value: 10, min: 0, step: 0.1 },
+      { name: "months", label: "Срок, месяцев", value: 60, min: 1 },
+      { name: "monthly_contribution", label: "Ежемесячный взнос, ₽", value: 10000, min: 0 },
+      { name: "contribution_at_beginning", label: "Взнос в начале месяца", type: "checkbox", value: true },
+    ],
+  },
+  compare: {
+    title: "Сравнение кредитов",
+    tool: "compare_loan_schedules",
+    fields: [
+      { name: "principal", label: "Сумма кредита, ₽", value: 1000000, min: 0 },
+      { name: "annual_rate_percent", label: "Ставка, % годовых", value: 12, min: 0, step: 0.1 },
+      { name: "months", label: "Срок, месяцев", value: 24, min: 1 },
+    ],
+  },
+};
+
+// ---------- Утилиты ----------
+
+const fmt = (v) => Number(v).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtInt = (v) => Number(v).toLocaleString("ru-RU");
+
+const $ = (id) => document.getElementById(id);
+
+let currentTab = "annuity";
+
+// ---------- Форма ----------
+
+function renderForm() {
+  const cfg = TOOLS[currentTab];
+  $("form-title").textContent = cfg.title;
+  const form = $("form");
+  form.innerHTML = "";
+  for (const f of cfg.fields) {
+    const div = document.createElement("div");
+    div.className = "field";
+    if (f.type === "checkbox") {
+      div.innerHTML = `
+        <div class="switch-row">
+          <input type="checkbox" id="f-${f.name}" ${f.value ? "checked" : ""}>
+          <span>${f.label}</span>
+        </div>`;
+    } else {
+      div.innerHTML = `
+        <label for="f-${f.name}">${f.label}</label>
+        <input type="number" id="f-${f.name}" value="${f.value}" min="${f.min ?? 0}" step="${f.step || "any"}">`;
+    }
+    form.appendChild(div);
+  }
+}
+
+function collectArgs() {
+  const args = {};
+  for (const f of TOOLS[currentTab].fields) {
+    const el = $("f-" + f.name);
+    if (f.type === "checkbox") args[f.name] = el.checked;
+    else args[f.name] = Number(el.value);
+  }
+  return args;
+}
+
+// ---------- Статус ----------
+
+function showStatus(kind, text) {
+  const el = $("status");
+  el.className = "status " + kind;
+  el.textContent = text;
+}
+function hideStatus() { $("status").className = "status"; }
+
+// ---------- Отображение результатов ----------
+
+function stat(label, value, cls = "") {
+  return `<div class="stat"><div class="label">${label}</div><div class="value ${cls}">${value}</div></div>`;
+}
+
+function renderLoanResult(data, kindLabel) {
+  const s = data.summary;
+  const rows = [
+    ["Месяц", "Платёж, ₽", "Проценты, ₽", "Тело, ₽", "Остаток, ₽"],
+    ...data.schedule.map((r) => [fmtInt(r.month), fmt(r.payment), fmt(r.interest), fmt(r.principal_component), fmt(r.remaining_principal)]),
+  ];
+  const stats = [
+    stat("Сумма кредита", fmt(s.principal) + " ₽"),
+    stat("Ставка", fmt(s.annual_rate_percent) + " %"),
+    stat("Срок", fmtInt(s.months) + " мес."),
+  ];
+  if (s.monthly_payment !== undefined) stats.push(stat("Ежемесячный платёж", fmt(s.monthly_payment) + " ₽"));
+  if (s.first_month_payment !== undefined) {
+    stats.push(stat("Первый платёж", fmt(s.first_month_payment) + " ₽"));
+    stats.push(stat("Последний платёж", fmt(s.last_month_payment) + " ₽"));
+  }
+  stats.push(stat("Общая сумма выплат", fmt(s.total_paid) + " ₽"));
+  stats.push(stat("Переплата по процентам", fmt(s.total_interest) + " ₽", "red"));
+
+  $("summary").innerHTML = stats.join("");
+  $("chart-title").textContent = "Динамика платежей и остатка долга";
+  $("table-title").textContent = "Помесячный график — " + kindLabel;
+  renderTable(rows);
+  drawLoanChart(data.schedule);
+}
+
+function renderGrowthResult(data, kindLabel) {
+  const s = data.summary;
+  const rows = [
+    ["Месяц", "Начало, ₽", "Взнос, ₽", "Проценты, ₽", "Конец, ₽", "Накоплено %, ₽"],
+    ...data.schedule.map((r) => [fmtInt(r.month), fmt(r.starting_balance), fmt(r.contribution), fmt(r.interest_earned), fmt(r.ending_balance), fmt(r.cumulative_interest)]),
+  ];
+  const stats = [
+    stat("Начальная сумма", fmt(s.initial_amount) + " ₽"),
+    stat("Ставка", fmt(s.annual_rate_percent) + " %"),
+    stat("Срок", fmtInt(s.months) + " мес."),
+    stat("Итоговая сумма", fmt(s.final_balance) + " ₽", "green"),
+    stat("Всего взносов", fmt(s.total_contributions) + " ₽"),
+    stat("Проценты начислены", fmt(s.total_interest) + " ₽", "green"),
+  ];
+  if (s.roi_percent !== undefined) {
+    stats.push(stat("ROI", fmt(s.roi_percent) + " %", "green"));
+    stats.push(stat("Прирост капитала", fmt(s.capital_gain) + " ₽", "green"));
+  }
+  $("summary").innerHTML = stats.join("");
+  $("chart-title").textContent = "Рост капитала";
+  $("table-title").textContent = "Помесячный график — " + kindLabel;
+  renderTable(rows);
+  drawGrowthChart(data.schedule);
+}
+
+function renderCompareResult(data) {
+  const c = data.comparison;
+  const d = c.difference;
+  const rows = [
+    ["Месяц", "Аннуитет: платёж, ₽", "Аннуитет: остаток, ₽", "Дифф.: платёж, ₽", "Дифф.: остаток, ₽"],
+    ...data.annuity.schedule.map((a, i) => {
+      const b = data.differential.schedule[i];
+      return [fmtInt(a.month), fmt(a.payment), fmt(a.remaining_principal), fmt(b.payment), fmt(b.remaining_principal)];
+    }),
+  ];
+  $("summary").innerHTML = [
+    stat("Сумма кредита", fmt(c.principal) + " ₽"),
+    stat("Ставка", fmt(c.annual_rate_percent) + " %"),
+    stat("Срок", fmtInt(c.months) + " мес."),
+    stat("Аннуитет: выплаты", fmt(c.annuity.total_paid) + " ₽"),
+    stat("Дифф.: выплаты", fmt(c.differential.total_paid) + " ₽"),
+    stat("Аннуитет: переплата", fmt(c.annuity.total_interest) + " ₽", "red"),
+    stat("Дифф.: переплата", fmt(c.differential.total_interest) + " ₽", "red"),
+    stat("Экономия (дифф.)", fmt(d.savings) + " ₽", "green"),
+  ].join("");
+
+  const rec = $("recommendation");
+  rec.classList.remove("hidden");
+  rec.textContent = "💡 " + c.recommendation;
+
+  const adv = $("advantages");
+  adv.classList.remove("hidden");
+  adv.innerHTML = `
+    <div><h3>Аннуитетный</h3><ul>${c.annuity_advantages.map((a) => `<li>${a}</li>`).join("")}</ul></div>
+    <div><h3>Дифференцированный</h3><ul>${c.differential_advantages.map((a) => `<li>${a}</li>`).join("")}</ul></div>`;
+
+  $("chart-title").textContent = "Сравнение платежей по месяцам";
+  $("table-title").textContent = "Помесячный график — оба типа";
+  renderTable(rows);
+  drawCompareChart(data.annuity.schedule, data.differential.schedule);
+}
+
+function renderTable(rows) {
+  const table = $("table");
+  table.innerHTML = rows.map((r, i) => {
+    const tag = i === 0 ? "th" : "td";
+    return "<tr>" + r.map((c) => `<${tag}>${c}</${tag}>`).join("") + "</tr>";
+  }).join("");
+}
+
+// ---------- Графики (Canvas, без внешних библиотек) ----------
+
+function prepCanvas() {
+  const canvas = $("chart");
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+
+function drawSeries(ctx, w, h, pad, series, colors, yMax, yLabelFmt) {
+  // Сетка и оси
+  ctx.strokeStyle = "#e5e7eb";
+  ctx.fillStyle = "#6b7280";
+  ctx.font = "11px sans-serif";
+  const gridLines = 5;
+  for (let i = 0; i <= gridLines; i++) {
+    const y = pad.t + ((h - pad.t - pad.b) * i) / gridLines;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(w - pad.r, y);
+    ctx.stroke();
+    const val = yMax * (1 - i / gridLines);
+    ctx.fillText(yLabelFmt(val), 4, y + 4);
+  }
+  // Линии
+  series.forEach((s, idx) => {
+    const color = colors[idx];
+    const n = s.length;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    s.forEach((v, i) => {
+      const x = pad.l + ((w - pad.l - pad.r) * i) / (n - 1);
+      const y = pad.t + (h - pad.t - pad.b) * (1 - v / yMax);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  });
+  // Легенда
+  const legend = series.legend || [];
+  let lx = pad.l;
+  ctx.font = "12px sans-serif";
+  legend.forEach((label, idx) => {
+    ctx.fillStyle = colors[idx];
+    ctx.fillRect(lx, 6, 12, 12);
+    ctx.fillStyle = "#374151";
+    ctx.fillText(label, lx + 16, 16);
+    lx += 16 + ctx.measureText(label).width + 18;
+  });
+}
+
+const shortMoney = (v) => {
+  if (v >= 1e6) return (v / 1e6).toFixed(1) + "M";
+  if (v >= 1e3) return Math.round(v / 1e3) + "k";
+  return Math.round(v);
+};
+
+function drawLoanChart(schedule) {
+  const { ctx, w, h } = prepCanvas();
+  const pad = { l: 46, r: 12, t: 28, b: 12 };
+  const payments = schedule.map((r) => r.payment);
+  const remaining = schedule.map((r) => r.remaining_principal);
+  const yMax = Math.max(...payments, ...remaining) * 1.05 || 1;
+  const series = [payments, remaining];
+  series.legend = ["Платёж", "Остаток долга"];
+  drawSeries(ctx, w, h, pad, series, ["#2563eb", "#f59e0b"], yMax, shortMoney);
+}
+
+function drawGrowthChart(schedule) {
+  const { ctx, w, h } = prepCanvas();
+  const pad = { l: 46, r: 12, t: 28, b: 12 };
+  const balance = schedule.map((r) => r.ending_balance);
+  const cumInterest = schedule.map((r) => r.cumulative_interest);
+  const yMax = Math.max(...balance) * 1.05 || 1;
+  const series = [balance, cumInterest];
+  series.legend = ["Баланс", "Накопленные проценты"];
+  drawSeries(ctx, w, h, pad, series, ["#059669", "#2563eb"], yMax, shortMoney);
+}
+
+function drawCompareChart(ann, dif) {
+  const { ctx, w, h } = prepCanvas();
+  const pad = { l: 46, r: 12, t: 28, b: 12 };
+  const a = ann.map((r) => r.payment);
+  const b = dif.map((r) => r.payment);
+  const yMax = Math.max(...a, ...b) * 1.05 || 1;
+  const series = [a, b];
+  series.legend = ["Аннуитет", "Дифференцированный"];
+  drawSeries(ctx, w, h, pad, series, ["#2563eb", "#059669"], yMax, shortMoney);
+}
+
+// ---------- Расчёт ----------
+
+async function calculate() {
+  const cfg = TOOLS[currentTab];
+  const args = collectArgs();
+  const btn = $("btn-calc");
+  btn.disabled = true;
+  btn.textContent = "Расчёт…";
+  showStatus("loading", "Отправляем запрос на MCP-сервер…");
+
+  try {
+    const resp = await fetch("/api/calc", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tool: cfg.tool, arguments: args }),
+    });
+    const result = await resp.json();
+    if (!result.ok) {
+      showStatus("error", "❌ " + (result.error || "Ошибка расчёта"));
+      return;
+    }
+    hideStatus();
+    $("result-empty").classList.add("hidden");
+    $("result").classList.remove("hidden");
+    $("recommendation").classList.add("hidden");
+    $("advantages").classList.add("hidden");
+
+    const data = result.data;
+    if (currentTab === "annuity") renderLoanResult(data, "аннуитетный кредит");
+    else if (currentTab === "differential") renderLoanResult(data, "дифференцированный кредит");
+    else if (currentTab === "deposit") renderGrowthResult(data, "вклад");
+    else if (currentTab === "investment") renderGrowthResult(data, "инвестиции");
+    else renderCompareResult(data);
+  } catch (e) {
+    showStatus("error", "❌ Ошибка сети: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Рассчитать";
+  }
+}
+
+// ---------- Инициализация ----------
+
+document.querySelectorAll(".tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+    tab.classList.add("active");
+    currentTab = tab.dataset.tab;
+    renderForm();
+  });
+});
+
+$("btn-calc").addEventListener("click", calculate);
+renderForm();
+</script>
+</body>
+</html>

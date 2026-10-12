@@ -1,0 +1,213 @@
+# Локальная среда для лабораторных работ ПИС
+# Реальные темы лабораторных — в LABS.md. Каждый сервис запускается своим профилем:
+#   docker compose -f docker-compose.local.yaml --profile lab1 up -d --build
+# LLM-инфраструктура (Ollama) запускается без профиля:
+#   docker compose -f docker-compose.local.yaml up -d ollama
+
+services:
+  # --- LLM (нужен агентам лаб. 2–6) ---
+  ollama:
+    image: ollama/ollama:latest
+    container_name: pis-ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434      # слушать все интерфейсы
+      - OLLAMA_KEEP_ALIVE=10m          # держать модель в памяти
+      - OLLAMA_NUM_PARALLEL=2          # параллельных запросов
+      - OLLAMA_MAX_LOADED_MODELS=1     # одна модель в VRAM/RAM
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - pis-net
+
+  # --- Lab 1: MCP-сервер фин. инструментов (FastMCP, Python) ---
+  lab1-mcp-server:
+    build:
+      context: ./lab1-mcp-finance-lab
+      dockerfile: Dockerfile
+    container_name: pis-lab1-mcp
+    profiles: ["lab1"]
+    ports:
+      - "8000:8000"
+    environment:
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    networks:
+      - pis-net
+
+  # --- Lab 9: MCP-сервер фин. инструментов (Go) ---
+  lab9-mcp-server-go:
+    build:
+      context: ./lab9-mcp-finance-go
+      dockerfile: Dockerfile
+    container_name: pis-lab9-mcp-go
+    profiles: ["lab9"]
+    ports:
+      - "8100:8000"
+    restart: unless-stopped
+    networks:
+      - pis-net
+
+  # --- Lab 2: ADK-агент + A2A-сервер ---
+  lab2-adk-agent:
+    build:
+      context: ./lab2-adk-agent
+      dockerfile: Dockerfile
+    container_name: pis-lab2-adk
+    profiles: ["lab2"]
+    ports:
+      - "8002:10000"
+    environment:
+      - GOOGLE_GENAI_USE_VERTEXAI=0
+      - GOOGLE_API_KEY=${LLM_API_KEY:-dummy}
+      - LLM_API_KEY=${LLM_API_KEY:-dummy}
+      - LLM_API_BASE=${LLM_API_BASE:-http://host.docker.internal:11434/v1}
+      - LLM_MODEL=${LLM_MODEL:-llama3.2}
+      - MCP_URL=${MCP_URL:-http://host.docker.internal:8000/mcp}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://host.docker.internal:4318}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - pis-net
+
+  # --- Lab 3: LangChain-агент + A2A-сервер ---
+  lab3-langchain-agent:
+    build:
+      context: ./lab3-langchain-agent
+      dockerfile: Dockerfile
+    container_name: pis-lab3-langchain
+    profiles: ["lab3"]
+    ports:
+      - "8003:10000"
+    environment:
+      - LLM_API_KEY=${LLM_API_KEY:-dummy}
+      - LLM_API_BASE=${LLM_API_BASE:-http://host.docker.internal:11434/v1}
+      - LLM_MODEL=${LLM_MODEL:-llama3.2}
+      - MCP_URL=${MCP_URL:-http://host.docker.internal:8000/mcp}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://host.docker.internal:4318}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - pis-net
+
+  # --- Lab 4: Smolagents-агент + A2A-сервер ---
+  lab4-smolagents-agent:
+    build:
+      context: ./lab4-smolagents-agent
+      dockerfile: Dockerfile
+    container_name: pis-lab4-smolagents
+    profiles: ["lab4"]
+    ports:
+      - "8004:10000"
+    environment:
+      - LLM_API_KEY=${LLM_API_KEY:-dummy}
+      - LLM_API_BASE=${LLM_API_BASE:-http://host.docker.internal:11434/v1}
+      - LLM_MODEL=${LLM_MODEL:-llama3.2}
+      - MCP_URL=${MCP_URL:-http://host.docker.internal:8000/mcp}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://host.docker.internal:4318}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - pis-net
+
+  # --- Lab 5: CrewAI-агент + A2A-сервер ---
+  lab5-crewai-agent:
+    build:
+      context: ./lab5-crewai-agent
+      dockerfile: Dockerfile
+    container_name: pis-lab5-crewai
+    profiles: ["lab5"]
+    ports:
+      - "8005:10000"
+    environment:
+      - LLM_API_KEY=${LLM_API_KEY:-dummy}
+      - LLM_API_BASE=${LLM_API_BASE:-http://host.docker.internal:11434/v1}
+      - LLM_MODEL=${LLM_MODEL:-llama3.2}
+      - MCP_URL=${MCP_URL:-http://host.docker.internal:8000/mcp}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://host.docker.internal:4318}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - pis-net
+
+  # --- Lab 6: Strands-агент (meta-tools) + A2A-сервер ---
+  lab6-strands-agent:
+    build:
+      context: ./lab6-strands-agent
+      dockerfile: Dockerfile
+    container_name: pis-lab6-strands
+    profiles: ["lab6"]
+    ports:
+      - "8006:10000"
+    environment:
+      - LLM_API_KEY=${LLM_API_KEY:-dummy}
+      - LLM_API_BASE=${LLM_API_BASE:-http://host.docker.internal:11434/v1}
+      - LLM_MODEL=${LLM_MODEL:-llama3.2}
+      - MCP_URL=${MCP_URL:-http://host.docker.internal:8000/mcp}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://host.docker.internal:4318}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - pis-net
+
+  # --- Lab 7: Mattermost-бот (подключается к A2A-агенту, OTel-трейсинг) ---
+  lab7-mattermost-bot:
+    build:
+      context: ./lab7-mattermost-bot-for-agents
+      dockerfile: Dockerfile
+    container_name: pis-lab7-mm-bot
+    profiles: ["lab7"]
+    environment:
+      - MATTERMOST_URL=${MATTERMOST_URL}
+      - MATTERMOST_TOKEN=${MATTERMOST_TOKEN}
+      - MATTERMOST_CHANNEL=${MATTERMOST_CHANNEL:-pis}
+      - A2A_BASE_URL=${A2A_BASE_URL:-http://host.docker.internal:8002}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://host.docker.internal:4318}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - pis-net
+
+  # --- Lab 8: Telegram-бот (long-polling, подключается к A2A-агенту) ---
+  lab8-telegram-bot:
+    build:
+      context: ./lab8-telegram-bot-for-agents
+      dockerfile: Dockerfile
+    container_name: pis-lab8-tg-bot
+    profiles: ["lab8"]
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - A2A_BASE_URL=${A2A_BASE_URL:-http://host.docker.internal:8002}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - pis-net
+
+  # --- Lab 10: A2UI-рендерер (React + nginx) ---
+  lab10-a2ui-renderer:
+    build:
+      context: ./lab10-a2a-a2ui-renderer
+      dockerfile: Dockerfile
+    container_name: pis-lab10-a2ui
+    profiles: ["lab10"]
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    networks:
+      - pis-net
+
+volumes:
+  ollama_data:
+
+networks:
+  pis-net:
+    driver: bridge
